@@ -1,6 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
-import sys
 import json
 import caller  # assuming caller is your module
 
@@ -58,16 +57,15 @@ def main(trainNo, date):
         print(f"Error in main function: {e}")
         return {"error": str(e)}
 
-def run(server_class=HTTPServer, handler_class=Handler, port=8080):
+def run(server_class=HTTPServer, handler_class=Handler, port=8000):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f'Starting httpd server on port {port}...')
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print('^C received, shutting down server')
+        httpd.server_close()
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python index.py <port>")
-        sys.exit(1)
-    
-    port = int(sys.argv[1])
-    run(port=port)
+    run()

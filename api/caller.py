@@ -29,6 +29,7 @@ def call_site(trainNo, date=None, station=None):
             #     ujson.dump(entire_list, jsn_w, indent=4)
 
             print(json.dumps(entire_list, indent=4))  
+            return(entire_list)
   
         else:    
             print(f"Error: Request failed with status code {response.status_code}")  
