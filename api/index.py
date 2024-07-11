@@ -46,12 +46,17 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(result).encode('utf-8'))
 
 def main(trainNo, date):
-    # Set date to None if empty string is provided
-    if date == "":
-        date = None
+    try:
+        # Set date to None if empty string is provided
+        if date == "":
+            date = None
 
-    # Call the external function (caller) with trainNo and date
-    return caller.call_site(trainNo, date)
+        # Call the external function (caller) with trainNo and date
+        return caller.call_site(trainNo, date)
+    except Exception as e:
+        # Handle exceptions here, log them or return an appropriate error response
+        print(f"Error in main function: {e}")
+        return {"error": str(e)}
 
 def run(server_class=HTTPServer, handler_class=Handler, port=8080):
     server_address = ('', port)
