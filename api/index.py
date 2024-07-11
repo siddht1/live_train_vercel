@@ -1,71 +1,38 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import json
-import caller  # assuming caller is your module
+import re
+import caller
 
-class Handler(BaseHTTPRequestHandler):
-    
+class handler(BaseHTTPRequestHandler):
+
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
-        # Parse query parameters from URL
-        url_parts = urlparse(self.path)
-        query_params = parse_qs(url_parts.query)
-
-        # Extract trainNo and date from query parameters
-        trainNo = query_params.get('trainNo', [None])[0]
-        date = query_params.get('date', [None])[0]
-
-        # Call main function with obtained trainNo and date
-        result = main(trainNo, date)
-        
-        # Convert result to JSON and send as response
-        self.wfile.write(json.dumps(result).encode('utf-8'))
-        
-    def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length).decode('utf-8')
-        
-        # Parse query parameters from POST data
-        query_params = parse_qs(post_data)
+        parsed_path = urlparse(self.path)
+        query_params = parse_qs(parsed_path.query)
         
         # Extract trainNo and date from query parameters
         trainNo = query_params.get('trainNo', [None])[0]
         date = query_params.get('date', [None])[0]
 
-        # Call main function with obtained trainNo and date
-        result = main(trainNo, date)
+        if trainNo and self.is_valid_train(trainNo):
+            # Handling empty date
+            if date is None or date == "":
+                date = None
+            
+            try:
+                status = caller.call_site(trainNo, date)
+                if status:
+                    self.wfile.write(json.dumps(status).encode('utf-8'))
+                else:
+                    self.wfile.write(json.dumps({"error": "Failed to fetch Live Train status"}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({"error": f"Exception occurred: {str(e)}"}).encode('utf-8'))
+        else:
+            self.wfile.write(json.dumps({"error": "Invalid or missing Train number"}).encode('utf-8'))
 
-        # Convert result to JSON and send as response
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(result).encode('utf-8'))
-
-def main(trainNo, date):
-    try:
-        # Set date to None if empty string is provided
-        if date == "":
-            date = None
-
-        # Call the external function (caller) with trainNo and date
-        return caller.call_site(trainNo, date)
-    except Exception as e:
-        # Handle exceptions here, log them or return an appropriate error response
-        print(f"Error in main function: {e}")
-        return {"error": str(e)}
-
-def run(server_class=HTTPServer, handler_class=Handler, port=8000):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f'Starting httpd server on port {port}...')
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        print('^C received, shutting down server')
-        httpd.server_close()
-
-if __name__ == '__main__':
-    run()
+    def is_valid_train(self, trainNo):
+        return bool(re.match(r'^\d{5}$', trainNo))
