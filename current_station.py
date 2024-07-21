@@ -27,7 +27,7 @@ def get_information_current_station(html_string,trainNo=None, date=None, station
     if match:  
         updated_at=match.group(1).replace('', '')  
         updated_at=updated_at.replace('&nbsp;','') 
-    current_station['updated at']= updated_at
+        current_station['updated at']= updated_at
     
     # with open(f"station_{trainNo}_{date}.json", 'w', encoding='utf-8') as jsn_w:  
     #     ujson.dump(current_station,jsn_w,indent=4)
